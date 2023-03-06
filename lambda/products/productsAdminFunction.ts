@@ -1,14 +1,24 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { ProductRepository } from "/opt/nodejs/productsLayer";
+import { Product, ProductRepository } from "/opt/nodejs/productsLayer";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
 
-const productsDdb = process.env.PRODUCTS_DDB!
-const ddbClient = new DocumentClient()
+const productsDdb = process.env.PRODUCTS_DDB!;
+const ddbClient = new DocumentClient();
 
-const productRepository = new ProductRepository(ddbClient, productsDdb)
+const productNotFoundError = (more?:any) => {
+	return {
+		statusCode: 400,
+		body: JSON.stringify({
+			message: "Product not found",
+			...more
+		}),
+	};
+}
+
+const productRepository = new ProductRepository(ddbClient, productsDdb);
 
 export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
-	const { resource, httpMethod, requestContext } = event;
+	const { resource, httpMethod, requestContext, body } = event;
 	const { awsRequestId } = context;
 	const { requestId: apiRequestId } = requestContext;
 
@@ -16,38 +26,43 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
 
 	if (resource === "/products") {
 		console.log("POST /products");
+		const product = JSON.parse(body!) as Product;
+		const productCreated = productRepository.create(product);
+
 		return {
 			statusCode: 201,
-			body: JSON.stringify({
-				message: "Product created at" + Date.now(),
-			}),
+			body: JSON.stringify(productCreated),
 		};
 	} else if (resource === "/products/{id}") {
 		const productId = event.pathParameters!.id as string;
+		
 		if (httpMethod === "GET") {
 			console.log(`GET product by id: ${productId} `);
+			const productFounded = await productRepository.getById(productId)
 			return {
 				statusCode: 202,
-				body: JSON.stringify({
-					message: `GET product by id: ${productId} `,
-				}),
+				body: JSON.stringify(productFounded),
 			};
 		}
 		if (httpMethod === "PUT") {
 			console.log(`PUT product by id: ${productId} `);
+			const product = JSON.parse(body!) as Product;
+			const productUpdated = await productRepository.updateProduct(productId, product).catch((error: Error) => {
+				return productNotFoundError(error);
+			});
+			
 			return {
 				statusCode: 202,
-				body: JSON.stringify({
-					message: `PUT product by id: ${productId} `,
-				}),
+				body: JSON.stringify(productUpdated),
 			};
 		} else if (httpMethod === "DELETE") {
 			console.log(`DELETE product by id: ${productId} `);
+			const deletedProduct = await productRepository.deleteById(productId).catch((error: Error) => {
+				return productNotFoundError(error)
+			});
 			return {
 				statusCode: 200,
-				body: JSON.stringify({
-					message: `DELETE product by id: ${productId} `,
-				}),
+				body: JSON.stringify(deletedProduct),
 			};
 		}
 	}
