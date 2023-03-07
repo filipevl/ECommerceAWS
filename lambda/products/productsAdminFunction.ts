@@ -1,19 +1,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { Product, ProductRepository } from "/opt/nodejs/productsLayer";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
+import { captureAWS } from "aws-xray-sdk";
+
+captureAWS(require("aws-sdk"))
 
 const productsDdb = process.env.PRODUCTS_DDB!;
 const ddbClient = new DocumentClient();
-
-const productNotFoundError = (more?:any) => {
-	return {
-		statusCode: 400,
-		body: JSON.stringify({
-			message: "Product not found",
-			...more
-		}),
-	};
-}
 
 const productRepository = new ProductRepository(ddbClient, productsDdb);
 

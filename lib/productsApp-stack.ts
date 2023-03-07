@@ -4,7 +4,7 @@ import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
 
 import { Construct } from "constructs";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
-import { LayerVersion } from "aws-cdk-lib/aws-lambda";
+import { LayerVersion, Tracing } from "aws-cdk-lib/aws-lambda";
 
 export class ProductsAppStack extends Stack {
 	readonly productsFetchHandler: NodejsFunction;
@@ -42,7 +42,8 @@ export class ProductsAppStack extends Stack {
 			environment: {
 				PRODUCTS_DDB: this.productsDdb.tableName
 			},
-			layers: [productsLayer]
+			layers: [productsLayer],
+			tracing: Tracing.ACTIVE
 		});
 
 		this.productsDdb.grantReadData(this.productsFetchHandler)
@@ -60,7 +61,8 @@ export class ProductsAppStack extends Stack {
 			environment: {
 				PRODUCTS_DDB: this.productsDdb.tableName
 			},
-			layers: [productsLayer]
+			layers: [productsLayer],
+			tracing: Tracing.ACTIVE
 		});
 
 		this.productsDdb.grantWriteData(this.productsAdminHandler)
