@@ -27,43 +27,67 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
 	if (resource === "/products") {
 		console.log("POST /products");
 		const product = JSON.parse(body!) as Product;
-		const productCreated = productRepository.create(product);
-
-		return {
-			statusCode: 201,
-			body: JSON.stringify(productCreated),
-		};
+		try{
+			const productCreated = await productRepository.create(product);
+	
+			return {
+				statusCode: 201,
+				body: JSON.stringify(productCreated),
+			};
+		}catch(error){
+			return {
+				statusCode: 500,
+				body: JSON.stringify(error)
+			}
+		}
 	} else if (resource === "/products/{id}") {
 		const productId = event.pathParameters!.id as string;
 		
 		if (httpMethod === "GET") {
 			console.log(`GET product by id: ${productId} `);
-			const productFounded = await productRepository.getById(productId)
-			return {
-				statusCode: 202,
-				body: JSON.stringify(productFounded),
-			};
+			try{
+				const productFounded = await productRepository.getById(productId)
+				return {
+					statusCode: 202,
+					body: JSON.stringify(productFounded),
+				};
+			}catch(error){
+				return {
+					statusCode: 404,
+					body: JSON.stringify(error)
+				}
+			}
 		}
 		if (httpMethod === "PUT") {
 			console.log(`PUT product by id: ${productId} `);
 			const product = JSON.parse(body!) as Product;
-			const productUpdated = await productRepository.updateProduct(productId, product).catch((error: Error) => {
-				return productNotFoundError(error);
-			});
+			try{
+				const productUpdated = await productRepository.updateProduct(productId, product);
+				return {
+					statusCode: 202,
+					body: JSON.stringify(productUpdated),
+				};
+			}catch(error){
+				return {
+					statusCode: 400,
+					body: JSON.stringify(error)
+				}
+			}
 			
-			return {
-				statusCode: 202,
-				body: JSON.stringify(productUpdated),
-			};
 		} else if (httpMethod === "DELETE") {
 			console.log(`DELETE product by id: ${productId} `);
-			const deletedProduct = await productRepository.deleteById(productId).catch((error: Error) => {
-				return productNotFoundError(error)
-			});
-			return {
-				statusCode: 200,
-				body: JSON.stringify(deletedProduct),
-			};
+			try{
+				const deletedProduct = await productRepository.deleteById(productId);
+				return {
+					statusCode: 200,
+					body: JSON.stringify(deletedProduct),
+				};
+			}catch(error){
+				return {
+					statusCode: 400,
+					body: JSON.stringify(error)
+				}
+			}
 		}
 	}
 

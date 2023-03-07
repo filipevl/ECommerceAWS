@@ -15,26 +15,35 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
 	console.log(`API Gateway RequestId: ${apiRequestId} - Lambda RequestId: ${awsRequestId}`);
 	if (resource === "/products") {
 		console.log("GET products");
+		try{
+			const products = await productRepository.getAll()
+			return {
+				statusCode: 200,
+				body: JSON.stringify(products),
+			};
+		}catch(error){
+			return {
+				statusCode: 500,
+				body: JSON.stringify(error),
+			};
+		}
 
-		return {
-			statusCode: 200,
-			body: JSON.stringify(await productRepository.getAll()),
-		};
 	} else if (resource === "/products/{id}") {
 		const productId = pathParameters!.id as string;
-		const product = await productRepository.getById(productId).catch((error: Error) => {
-			console.error(error.message);
-			return {
-				statusCode: 404,
-				body: error.message,
-			};
-		});
 		console.log(`GET product by id: ${productId} `);
-
-		return {
-			statusCode: 200,
-			body: JSON.stringify(product),
-		};
+		try{
+			const product = await productRepository.getById(productId)
+	
+			return {
+				statusCode: 200,
+				body: JSON.stringify(product),
+			};
+		}catch(error){
+			return {
+				statusCode: 500,
+				body: JSON.stringify(error),
+			};
+		}
 	}
 
 	return {
