@@ -7,6 +7,7 @@ export interface Product {
 	code: number;
 	model: string;
 	price: number;
+	productUrl: string;
 }
 
 export class ProductRepository {
@@ -70,7 +71,7 @@ export class ProductRepository {
 
 	async updateProduct(productId: string, product: Product): Promise<Product> {
 
-        const { code, model, price, productName } = product;
+        const { code, model, price, productName, productUrl } = product;
 
 		const { Attributes } = await this.ddbClient
 			.update({
@@ -80,12 +81,13 @@ export class ProductRepository {
 				},
 				ConditionExpression: "attribute_exists(id)",
 				ReturnValues: "UPDATED_NEW",
-                UpdateExpression: "set productName = :n, code = :c, price = :p, model = :m",
+                UpdateExpression: "set productName = :n, code = :c, price = :p, model = :m, productUrl = :u",
                 ExpressionAttributeValues: {
                     ":c": code,
                     ":m": model,
                     ":p": price,
                     ":n": productName,
+					":u": productUrl
                 }
 			})
 			.promise();
